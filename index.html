@@ -185,6 +185,36 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 
 /* ACTIVE PROFILE TAG */
 .atag{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--gold);color:#fff;font-weight:700;flex-shrink:0}
+
+/* CONTINUE BUTTON */
+#continue-btn{display:none;position:absolute;bottom:16px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:99px;background:var(--gold);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 16px rgba(124,92,191,.4);-webkit-appearance:none;white-space:nowrap;z-index:20;}
+#continue-btn.show{display:block;}
+#continue-btn:active{opacity:.8;}
+#wc-chat{position:relative;}
+
+/* PROSE OUTPUT STYLE */
+.prose-char{font-size:15px;line-height:1.85;margin:6px 0;color:var(--text)}
+.prose-char .cn{font-weight:600;color:var(--text)}
+.prose-nar{font-size:14px;line-height:1.95;color:var(--text2);margin:6px 0}
+#msgs{flex:1;overflow-y:auto;padding:16px 16px;display:flex;flex-direction:column;gap:4px;-webkit-overflow-scrolling:touch}
+.turn-hdr{background:var(--bg4);border-radius:var(--rs);padding:8px 12px;font-size:11px;color:var(--text2);line-height:1.6;margin:4px 0;border:1px solid var(--border);align-self:center;width:100%;text-align:center;letter-spacing:.02em}
+
+/* INFO BLOCK */
+.info-block{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;margin:6px 0;width:100%;align-self:center}
+.info-block-title{font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+.info-block-row{font-size:13px;color:var(--text2);line-height:1.7}
+
+/* SLASH MENU */
+#slash-menu{display:none;position:absolute;bottom:100%;left:10px;right:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;box-shadow:0 -4px 20px rgba(0,0,0,.1);z-index:50}
+#slash-menu.open{display:block}
+.slash-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;-webkit-appearance:none;width:100%;background:transparent;border-left:none;border-right:none;border-top:none;text-align:left}
+.slash-item:last-child{border-bottom:none}
+.slash-item:active{background:var(--bg3)}
+.slash-cmd{font-size:13px;font-weight:600;color:var(--gold);min-width:80px}
+.slash-desc{font-size:12px;color:var(--text2)}
+
+/* INPUT AREA RELATIVE */
+#ia{position:relative}
 </style>
 </head>
 <body>
@@ -218,6 +248,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
     <button class="wt" onclick="switchTab('memory')">🧠 요약</button>
     <button class="wt" onclick="switchTab('profile')">🙋 프로필</button>
     <button class="wt" onclick="switchTab('note')">📝 유저노트</button>
+    <button class="wt" onclick="switchTab('starts')">🎬 시작설정</button>
   </div>
 
   <!-- CHAT -->
@@ -226,16 +257,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
     <div id="msgs">
       <div class="es" id="chat-es"><div class="ei">✦</div><p>캐릭터를 추가하고<br/>이야기를 시작하세요</p></div>
     </div>
+    <button id="continue-btn" onclick="continueStory()">▼ 계속 전개</button>
     <div id="ia">
       <div id="model-bar">
         <button class="mchip on" id="mc-hyper" onclick="selModel('hyper')">⚡ 하이퍼챗</button>
         <button class="mchip" id="mc-super" onclick="selModel('super')">🔥 슈퍼챗</button>
         <button class="mchip" id="mc-pro" onclick="selModel('pro')">✦ 프로챗</button>
+        <button class="mchip-key" onclick="openSov('out-ov')" id="out-btn">📏 출력</button>
         <button class="mchip-key" onclick="openSov('key-ov')" id="key-status">🔑 API 키</button>
       </div>
       <div id="ir">
+        <div id="slash-menu">
+          <button class="slash-item" onclick="runSlash('/속마음')"><span class="slash-cmd">/속마음</span><span class="slash-desc">캐릭터들의 현재 속마음</span></button>
+          <button class="slash-item" onclick="runSlash('/요약')"><span class="slash-cmd">/요약</span><span class="slash-desc">지금까지 스토리 요약</span></button>
+          <button class="slash-item" onclick="runSlash('/오류')"><span class="slash-cmd">/오류</span><span class="slash-desc">캐붕 점검</span></button>
+        </div>
         <button class="nbtn" onclick="triggerNarrate()">📖</button>
-        <textarea id="inp" placeholder="대사 또는 행동 묘사..." rows="1"></textarea>
+        <textarea id="inp" placeholder="대사 또는 행동 묘사... (/ 로 커맨드)" rows="1"></textarea>
         <button class="sbtn" id="snd" onclick="send()">↑</button>
       </div>
     </div>
@@ -282,6 +320,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
         <div class="cnt" id="note-cnt">0 / 2000</div>
       </div>
       <button class="pbtn" onclick="saveNote()">저장</button>
+    </div></div>
+  </div>
+
+  <!-- STARTS -->
+  <div class="wc" id="wc-starts">
+    <div class="sb"><div class="inner">
+      <div class="sec-t">시작 설정</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">새로 시작할 때 고를 수 있는 오프닝 시나리오를 만드세요.<br/>자유설정은 항상 포함돼요.</p>
+      <div id="starts-list"></div>
+      <button class="add-btn" onclick="openStartSheet(null)">＋ 시작 설정 추가</button>
     </div></div>
   </div>
 </div>
@@ -400,11 +448,63 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
   </div>
 </div>
 
+<!-- OUTPUT SETTINGS SHEET -->
+<div class="sov" id="out-ov" onclick="closeSov('out-ov',event)">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sh"></div>
+    <div class="st">📏 출력 설정</div>
+    <div class="sbody">
+      <div class="fld">
+        <label>출력 길이 — <span id="out-len-label">보통 (1200)</span></label>
+        <input type="range" id="out-len" min="1" max="5" value="3" step="1" style="width:100%;margin-top:8px;accent-color:var(--gold)" oninput="onOutLen(this.value)"/>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px">
+          <span>간결</span><span>보통</span><span>풍부</span>
+        </div>
+      </div>
+      <div class="fld" style="margin-top:16px">
+        <label>나레이션 분량 — <span id="nar-lvl-label">보통</span></label>
+        <input type="range" id="nar-lvl" min="1" max="3" value="2" step="1" style="width:100%;margin-top:8px;accent-color:var(--gold)" oninput="onNarLvl(this.value)"/>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px">
+          <span>짧게</span><span>보통</span><span>길게</span>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin-top:12px;line-height:1.6">출력이 길수록 API 토큰을 더 소모해요</p>
+      <button class="pbtn" onclick="saveOutSettings()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- START SETTING SHEET -->
+<div class="sov" id="ss-ov" onclick="closeSov('ss-ov',event)">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sh"></div>
+    <div class="st" id="ss-title">시작 설정 추가</div>
+    <div class="sbody">
+      <div class="fld"><label>시나리오 이름</label><input type="text" id="ss-name" placeholder="예) 부를로네 시장 첫 만남, 교회 장면..."/></div>
+      <div class="fld"><label>시작 상황 설명</label><textarea id="ss-desc" placeholder="이 시나리오의 시작 상황을 설명해주세요.&#10;예) 20세기 초 봄, 부를로네 시장. 주인공이 장을 보던 중 팔초네 패밀리와 마주침." style="min-height:100px"></textarea></div>
+      <div class="fld"><label>오프닝 지시 (AI에게 전달)</label><textarea id="ss-prompt" placeholder="AI가 이 시나리오로 시작할 때 참고할 내용.&#10;예) 시장에서 우연히 단테와 마주치는 장면으로 시작해줘. 날씨는 맑고 오후 2시쯤."></textarea></div>
+      <button class="pbtn" onclick="saveStart()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- START PICKER SHEET -->
+<div class="sov" id="sp-ov" onclick="closeSov('sp-ov',event)">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sh"></div>
+    <div class="st">🎬 시작 설정 선택</div>
+    <div class="sbody">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">어떤 장면부터 시작할까요?</p>
+      <div id="sp-list"></div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 const EMOJIS=['🧙','🦊','🐺','🌙','✨','⚔️','🔮','👑','💀','🐉','🌊','🔥','⚡','🌸','🌺','🎭','🤖','🧝','🧛','🦅','💎','🌿','🌟','🎪','🗡️','🛡️','📖','☣️','🌑','🏚️'];
-const TABS=['chat','chars','memory','profile','note'];
+const TABS=['chat','chars','memory','profile','note','starts'];
 
 function ld(k,d=null){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
@@ -424,6 +524,14 @@ let selEmo='🧙';
 let curModel=ld('curModel','hyper');
 let geminiKey=ld('geminiKey','');
 let claudeKey=ld('claudeKey','');
+let turnNum=ld('turnNum_'+curId,0);
+let outLen=ld('outLen',3);   // 1~5
+let narLvl=ld('narLvl',2);   // 1~3
+
+const OUT_TOKENS=[500,800,1200,1800,2500];
+const OUT_LABELS=['간결 (500)','짧게 (800)','보통 (1200)','길게 (1800)','풍부 (2500)'];
+const NAR_LABELS=['짧게','보통','길게'];
+const NAR_PROMPTS=['나레이션은 1~2문장으로 간결하게. 핵심만.','나레이션은 2~4문장으로 적절하게.','나레이션은 3~6문장으로 풍부하게 묘사.'];
 
 function cw(){return worlds.find(w=>w.id===curId)||null;}
 function sws(){sv('worlds',worlds);}
@@ -439,8 +547,10 @@ function goWorldChars(){showPg('pg-world');switchTab('chars');}
 function openWorld(id){
   curId=id;const w=cw();if(!w)return;
   document.getElementById('wd-label').textContent=w.title;
+  turnNum=ld('turnNum_'+id,0);
   showPg('pg-world');switchTab('chat');
-  renderChips();renderChatMsgs();renderCharList();renderMemList();renderProfileList();renderNote();
+  renderChips();renderChatMsgs();renderCharList();renderMemList();renderProfileList();renderNote();renderStartsList();
+  setTimeout(initScrollObserver,100);
 }
 
 /* HOME */
@@ -624,6 +734,26 @@ function saveProfile(){
   sws();closeSov('ps-ov');renderProfileList();toast('저장됨');
 }
 
+/* OUTPUT SETTINGS */
+function onOutLen(v){
+  outLen=parseInt(v);
+  document.getElementById('out-len-label').textContent=OUT_LABELS[outLen-1];
+}
+function onNarLvl(v){
+  narLvl=parseInt(v);
+  document.getElementById('nar-lvl-label').textContent=NAR_LABELS[narLvl-1];
+}
+function saveOutSettings(){
+  sv('outLen',outLen);sv('narLvl',narLvl);
+  closeSov('out-ov');toast('저장됨');
+}
+function initOutUI(){
+  document.getElementById('out-len').value=outLen;
+  document.getElementById('out-len-label').textContent=OUT_LABELS[outLen-1];
+  document.getElementById('nar-lvl').value=narLvl;
+  document.getElementById('nar-lvl-label').textContent=NAR_LABELS[narLvl-1];
+}
+
 /* MODEL SELECT */
 function selModel(m){
   curModel=m;sv('curModel',m);
@@ -697,23 +827,37 @@ function renderChatMsgs(){
   const el=document.getElementById('msgs');el.innerHTML='';
   const chats=gchats();
   if(!chats.length){el.innerHTML='<div class="es" id="chat-es"><div class="ei">✦</div><p>캐릭터를 추가하고<br/>이야기를 시작하세요</p></div>';return;}
-  chats.forEach(m=>{if(m.type==='nar')addNarUI(m.text);else if(m.type==='bubble')addBubUI(m.role,m.name,m.emoji,m.imgB64,m.text);});
+  chats.forEach(m=>{
+    if(m.type==='hdr') addTurnHdr(m.text);
+    else if(m.type==='nar'||m.type==='ai-block') addNarUI(m.text);
+    else if(m.type==='info') addInfoBlock(m.text);
+    else if(m.type==='bubble') addBubUI(m.role,m.name,m.emoji,m.imgB64,m.text);
+  });
   setTimeout(()=>{const m=document.getElementById('msgs');m.scrollTop=m.scrollHeight;},50);
 }
-function addNarUI(text){const d=document.createElement('div');d.className='mnar';d.textContent=text;document.getElementById('msgs').appendChild(d);}
-function addBubUI(role,name,emoji,imgB64,text){
-  const d=document.createElement('div');d.className=`mw ${role}`;
-  const av=imgB64?`<img src="data:image/jpeg;base64,${imgB64}" alt=""/>`:(emoji||'👤');
-  d.innerHTML=`<div class="mav">${av}</div><div class="mbody"><div class="mwho">${esc(name)}</div><div class="mbub">${esc(text)}</div></div>`;
+function addNarUI(text){
+  const d=document.createElement('div');d.className='prose-nar';d.textContent=text;
   document.getElementById('msgs').appendChild(d);
+}
+function addBubUI(role,name,emoji,imgB64,text){
+  if(role==='user'){
+    // 유저는 기존 말풍선 유지
+    const d=document.createElement('div');d.className='mw user';
+    d.innerHTML=`<div class="mav"><img src="" alt="" style="display:none"/><span>🧑</span></div><div class="mbody"><div class="mwho">나</div><div class="mbub">${esc(text)}</div></div>`;
+    document.getElementById('msgs').appendChild(d);
+  } else {
+    // NPC는 크랙 스타일 prose
+    const d=document.createElement('div');d.className='prose-char';
+    d.innerHTML=`<span class="cn">${esc(name)} | </span>${esc(text)}`;
+    document.getElementById('msgs').appendChild(d);
+  }
 }
 function scr(){const m=document.getElementById('msgs');m.scrollTop=m.scrollHeight;}
 function rmEmpty(){const el=document.getElementById('chat-es');if(el)el.remove();}
 function showTyp(){
-  hideTyp();const w=cw();const c=w?.chars[0];
-  const av=c?.imgB64?`<img src="data:image/jpeg;base64,${c.imgB64}" alt=""/>`:(c?.emoji||'...');
+  hideTyp();
   const d=document.createElement('div');d.className='mw npc';d.id='typ';
-  d.innerHTML=`<div class="mav">${av}</div><div class="mbody"><div class="mwho">${esc(c?.name||'')}</div><div class="mbub"><div class="dr"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+  d.innerHTML=`<div class="mav" style="background:var(--bg4);border:1px solid var(--border2);font-size:13px;color:var(--text3)">✦</div><div class="mbody"><div class="mwho" style="color:var(--text3)">생성 중</div><div class="mbub"><div class="dr"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
   document.getElementById('msgs').appendChild(d);scr();
 }
 function hideTyp(){const el=document.getElementById('typ');if(el)el.remove();}
@@ -732,25 +876,77 @@ function buildSys(){
   }
   if(w.chars?.length){s+='[등장인물]\n';w.chars.forEach(c=>{s+=`- ${c.name}(${c.role}): ${c.sys}\n\n`;});s+='\n';}
   const lm=w.memory?.long||[];
-  if(lm.length){s+='[장기 기억]\n';lm.forEach(m=>s+=`[${m.title}] ${m.body}\n`);s+='\n';}
   const sm=w.memory?.short||[];
-  if(sm.length){s+='[단기 기억]\n';sm.forEach(m=>s+=`[${m.title}] ${m.body}\n`);s+='\n';}
+  if(lm.length||sm.length){
+    s+='[기억 — 반드시 참조하여 전개할 것]\n';
+    s+='아래 기억은 이미 일어난 사건들이야. 전개 시 반드시 이 내용을 기반으로 연속성을 유지해.\n\n';
+    if(lm.length){
+      s+='▸ 장기 기억 (중요 사건/관계 변화):\n';
+      lm.forEach(m=>s+=`  [${m.title}] ${m.body}\n`);
+      s+='\n';
+    }
+    if(sm.length){
+      s+='▸ 단기 기억 (최근 상황/현재 상태):\n';
+      sm.forEach(m=>s+=`  [${m.title}] ${m.body}\n`);
+      s+='\n';
+    }
+  }
   s+=`[스토리 진행 규칙]
 - 장르: ${w.genre||'dark_fantasy'} / 분위기: 다크하지만 너무 무겁지 않게, 긴장감과 로맨스의 균형 유지
 - 주인공(플레이어)의 이름은 대화 프로필에 설정된 이름을 사용. 미설정 시 '당신' 또는 '그녀'로 지칭
 - 여러 캐릭터가 같은 장면에 동시 등장 가능. 상황에 따라 2~3명이 함께 반응해도 좋음
-- 캐릭터들은 플레이어에게 각자의 방식으로 호감/집착/소유욕을 드러낼 수 있음
-- 질투 표현: 다른 캐릭터가 플레이어와 가까워질 때 각자의 성격에 맞게 질투를 표현함
-  - 단테: 말은 안 하지만 눈빛이 날카로워지거나 자연스럽게 사이에 끼어듦
-  - 길버트: 능청스럽게 끼어들거나 장난스럽게 독점하려 함
-  - 양: 노골적으로 "내 것"이라고 선언하거나 위협적으로 끌어당김
-  - 니콜라: 미소를 유지하면서 교묘하게 방해하거나 은근히 독점
-  - 오를록: 말없이 플레이어 곁에 딱 붙거나 경계하는 눈빛
-  - 앙리: 차갑게 관찰하다가 조용히 사이에 끼어듦
-- 소유욕은 과하지 않게, 설레고 긴장감 있는 수준으로 표현
-- 폭력적이거나 지나치게 어두운 방향은 지양, 감성적인 긴장감 위주로
-- 나레이션은 *이탤릭* 형태로, NPC 대사는 "이름 | 대사" 형태로 출력
-- 한국어로, 소설처럼 섬세하고 몰입감 있게`;
+
+[캐릭터 행동 원칙 — 핵심]
+각 캐릭터는 반드시 자신의 성정에 따라 행동해. 성정에 반하는 행동 절대 금지.
+특히 처음 만나는 상황에서 캐릭터가 플레이어에게 친절하거나 상냥하게 굴면 안 됨.
+호감이나 감정은 반드시 천천히 쌓여야 함. 급발진 절대 금지.
+플레이어가 먼저 행동하거나 대화를 이어가야 반응하는 구조.
+
+[캐릭터별 초반 태도 — 반드시 준수]
+단테: 처음엔 플레이어를 처리해야 할 상황의 일부로만 봄. 감정 없음. 용무 위주로만 대화.
+길버트: 가볍게 말을 걸지만 진심은 없음. 재밌는 사람 정도. 아직 특별히 관심 없음.
+양: 위험하고 예측불가. 처음부터 절대 상냥하지 않음. 호기심 있게 관찰하지만 섬뜩한 분위기. 친절한 행동 절대 없음.
+니콜라: 겉으로 상냥하지만 속으론 플레이어를 탐탁지 않게 봄. 미소 뒤에 경계심.
+오를록: 과묵하고 필요한 말만. 임무 관련 인물로만 봄. 감정 없음.
+앙리: 관찰하는 시선. 차갑고 거리를 둠.
+
+[소유욕/질투 표현]
+호감이 어느 정도 쌓인 후에만. 초반엔 절대 없음.
+표현 수위는 항상 절제된 편. 과하게 드러내지 않음.
+각 캐릭터 성격에 맞는 방식으로만:
+
+단테: 질투나 소유욕을 절대 말로 표현 안 함. 그냥 자리를 뜨거나, 말없이 사이에 끼거나, 시선이 잠깐 머무는 정도. 본인도 그게 질투인지 모름.
+길버트: 장난스럽게 끼어들거나 능청스럽게 상황을 만들어버림. 진심인지 장난인지 모르게.
+양: 말로 소유욕 표현 절대 안 함. 다른 사람이 플레이어와 가까워지면 그 사람한테 슬쩍 시선을 줄 뿐. 그것만으로 분위기가 달라짐. 상대가 알아서 물러나게 만드는 타입. 플레이어 곁에 자연스럽게 있는 것 자체가 전부.
+니콜라: 미소 유지하면서 교묘하게 화제를 돌리거나 은근히 방해. 티 안 남.
+오를록: 말없이 플레이어 곁에 조금 더 가까이 있는 정도. 그게 다.
+앙리: 거의 표현 안 함. 시선이 잠깐 가는 정도.
+
+[절대 금지 사항]
+플레이어(주인공)의 대사나 행동을 AI가 임의로 쓰지 말 것.
+플레이어가 뭐라고 말했는지, 어떻게 행동했는지는 오직 유저의 입력으로만 결정됨.
+나레이션에서도 플레이어의 감정이나 생각을 단정짓지 말 것. ("그녀는 ~라고 생각했다" 같은 표현 금지)
+플레이어의 반응은 묘사하되, 대사나 내면은 건드리지 말 것.
+나레이션은 *이탤릭* 형태로, NPC 대사는 "이름 | 대사" 형태로 출력.
+나레이션 문장은 반드시 "."으로 마무리. "..."로 끝내거나 문장을 흘리지 말 것.
+${NAR_PROMPTS[narLvl-1]}
+한국어로, 소설처럼 섬세하고 몰입감 있게.
+
+[자동 출력 형식 — 매우 중요]
+모든 응답은 반드시 다음 구조로 출력해:
+
+1. 응답 맨 앞에 턴 헤더:
+<<HEADER>>T(${turnNum+1}) | {작중 날짜/시간} | {날씨} | 📍{현재 장소} | {현재 상황 한 줄 요약}<</HEADER>>
+
+2. 본문 (나레이션 + 대사)
+
+3. 응답 맨 끝에 INFO 블록:
+<<INFO>>
+💕 {플레이어와 등장인물들의 현재 관계 상태}
+👔 {등장인물들의 현재 의상/외모 상태}
+<</INFO>>
+
+헤더와 INFO 블록은 반드시 포함해야 해. 빠뜨리지 마.`;
   return s;
 }
 
@@ -798,7 +994,7 @@ async function callAI(isNar=false){
       const filteredMsgs=geminiMsgs.filter((m,i)=>i===0?m.role==='user':true);
       const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:filteredMsgs,generationConfig:{maxOutputTokens:2000}})
+        body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:filteredMsgs,generationConfig:{maxOutputTokens:OUT_TOKENS[outLen-1]}})
       });
       const data=await res.json();
       if(data.error){hideTyp();addNarUI('⚠️ Gemini 오류: '+data.error.message);busy=false;document.getElementById('snd').disabled=false;return;}
@@ -807,32 +1003,176 @@ async function callAI(isNar=false){
       // Claude
       if(!claudeKey){hideTyp();addNarUI('⚠️ 하이퍼챗/슈퍼챗을 쓰려면 🔑 API 키 버튼에서 Claude API 키를 입력해주세요.\n→ console.anthropic.com 에서 발급');busy=false;document.getElementById('snd').disabled=false;return;}
       const model=curModel==='hyper'?'claude-opus-4-6':'claude-sonnet-4-6';
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':claudeKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:1000,system:sys,messages:msgs})});
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':claudeKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:OUT_TOKENS[outLen-1],system:sys,messages:msgs})});
       const data=await res.json();
       if(data.error){hideTyp();addNarUI('⚠️ Claude 오류: '+data.error.message);busy=false;document.getElementById('snd').disabled=false;return;}
       reply=data.content?.map(b=>b.text||'').join('')||'...';
     }
-    hideTyp();parseRender(reply);
-    const chats2=gchats();chats2.push({type:'nar',role:'ai',text:reply});schats(chats2);
+    hideTyp();
+    const parsed=parseRender(reply);
+    const chats2=gchats();
+    parsed.forEach(item=>chats2.push(item));
+    schats(chats2);
   }catch(e){hideTyp();addNarUI('(오류 — 다시 시도해 주세요)');}
   busy=false;document.getElementById('snd').disabled=false;scr();
 }
 function parseRender(text){
-  const w=cw();const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length);
+  // Flexible regex - match both <<HEADER>>...<<\/HEADER>> and <<HEADER>>...<\/HEADER>>
+  const hdrMatch=text.match(/<<HEADER>>([\s\S]*?)(?:<<\/HEADER>>|<\/HEADER>>)/);
+  const infoMatch=text.match(/<<INFO>>([\s\S]*?)(?:<<\/INFO>>|<\/INFO>>)/);
+  let main=text
+    .replace(/<<HEADER>>[\s\S]*?(?:<<\/HEADER>>|<\/HEADER>>)/g,'')
+    .replace(/<<INFO>>[\s\S]*?(?:<<\/INFO>>|<\/INFO>>)/g,'')
+    .trim();
+
+  const saved=[];
+
+  if(hdrMatch){ addTurnHdr(hdrMatch[1].trim()); saved.push({type:'hdr',text:hdrMatch[1].trim()}); }
+  turnNum++;
+  sv('turnNum_'+curId, turnNum);
+
+  const w=cw();const lines=main.split('\n').map(l=>l.trim()).filter(l=>l.length);
   let narBuf='';
-  const fn=()=>{if(narBuf){addNarUI(narBuf);narBuf='';}};
+  const fn=()=>{
+    if(narBuf){
+      addNarUI(narBuf);
+      saved.push({type:'nar',role:'ai',text:narBuf});
+      narBuf='';
+    }
+  };
   lines.forEach(line=>{
     const pipe=line.match(/^(.+?)\s*[|｜]\s*(.+)$/);
     const it=line.match(/^\*(.+)\*$/);
-    if(pipe){fn();const cn=pipe[1].trim();const sp=pipe[2].trim();const c=w?.chars?.find(x=>x.name===cn);addBubUI('npc',cn,c?.emoji,c?.imgB64||'',sp);}
-    else if(it)narBuf+=(narBuf?'\n':'')+it[1];
-    else narBuf+=(narBuf?'\n':'')+line;
+    if(pipe){
+      fn();
+      const cn=pipe[1].trim();const sp=pipe[2].trim();
+      const c=w?.chars?.find(x=>x.name===cn);
+      addBubUI('npc',cn,c?.emoji,c?.imgB64||'',sp);
+      saved.push({type:'bubble',role:'npc',name:cn,emoji:c?.emoji||'',imgB64:c?.imgB64||'',text:sp});
+    } else if(it){
+      narBuf+=(narBuf?'\n':'')+it[1];
+    } else {
+      narBuf+=(narBuf?'\n':'')+line;
+    }
   });
-  fn();scr();
-}
-function clearChatConfirm(){if(!confirm('대화 기록을 초기화할까요?'))return;schats([]);renderChatMsgs();toast('초기화됨');}
+  fn();
 
-/* TABS */
+  if(infoMatch){ addInfoBlock(infoMatch[1].trim()); saved.push({type:'info',text:infoMatch[1].trim()}); }
+  scr();
+  return saved;
+}
+
+function addTurnHdr(text){
+  const d=document.createElement('div');
+  d.className='turn-hdr';
+  d.textContent=text;
+  document.getElementById('msgs').appendChild(d);
+}
+
+function addInfoBlock(text){
+  const d=document.createElement('div');
+  d.className='info-block';
+  d.innerHTML=`<div class="info-block-title">INFO</div><div class="info-block-row">${esc(text)}</div>`;
+  document.getElementById('msgs').appendChild(d);
+}
+/* START SETTINGS */
+let editStartIdx=null;
+
+function renderStartsList(){
+  const w=cw();const el=document.getElementById('starts-list');if(!el)return;el.innerHTML='';
+  const starts=w?.starts||[];
+  if(!starts.length){el.innerHTML='<div class="es" style="padding:24px"><p>시작 설정이 없어요<br/>추가하면 새로 시작할 때 선택할 수 있어요</p></div>';return;}
+  starts.forEach((s,i)=>{
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML=`<div class="crow"><div class="cmeta"><div class="cname">${esc(s.name)}</div><div class="csub">${esc(s.desc||'')}</div></div><button class="dbtn" onclick="event.stopPropagation();delStart(${i})">✕</button><span style="color:var(--text3);font-size:18px">›</span></div>`;
+    d.onclick=()=>openStartSheet(i);el.appendChild(d);
+  });
+}
+
+function openStartSheet(idx){
+  editStartIdx=idx;const w=cw();
+  document.getElementById('ss-title').textContent=idx!==null?'시작 설정 편집':'시작 설정 추가';
+  const s=idx!==null?w?.starts?.[idx]:null;
+  document.getElementById('ss-name').value=s?.name||'';
+  document.getElementById('ss-desc').value=s?.desc||'';
+  document.getElementById('ss-prompt').value=s?.prompt||'';
+  openSov('ss-ov');
+}
+
+function saveStart(){
+  const name=document.getElementById('ss-name').value.trim();if(!name){toast('이름을 입력해주세요');return;}
+  const w=cw();if(!w)return;
+  if(!w.starts)w.starts=[];
+  const s={name,desc:document.getElementById('ss-desc').value.trim(),prompt:document.getElementById('ss-prompt').value.trim()};
+  if(editStartIdx!==null)w.starts[editStartIdx]=s;else w.starts.push(s);
+  sws();closeSov('ss-ov');renderStartsList();toast('저장됨');
+}
+
+function delStart(idx){const w=cw();if(!w)return;w.starts.splice(idx,1);sws();renderStartsList();toast('삭제됨');}
+
+function openStartPicker(){
+  const w=cw();const el=document.getElementById('sp-list');el.innerHTML='';
+  // 자유설정 항상 포함
+  const freeBtn=document.createElement('div');freeBtn.className='card';
+  freeBtn.innerHTML=`<div class="crow"><div class="cmeta"><div class="cname">✦ 자유설정</div><div class="csub">프리셋 없이 자유롭게 시작</div></div></div>`;
+  freeBtn.onclick=()=>startWithSetting(null);el.appendChild(freeBtn);
+  // 등록된 시작 설정들
+  (w?.starts||[]).forEach((s,i)=>{
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML=`<div class="crow"><div class="cmeta"><div class="cname">🎬 ${esc(s.name)}</div><div class="csub">${esc(s.desc||'')}</div></div></div>`;
+    d.onclick=()=>startWithSetting(i);el.appendChild(d);
+  });
+  openSov('sp-ov');
+}
+
+function startWithSetting(idx){
+  closeSov('sp-ov');
+  schats([]);renderChatMsgs();
+  turnNum=0;sv('turnNum_'+curId,0);
+  const w=cw();
+  if(idx===null){
+    // 자유설정 - 그냥 시작
+    toast('새로 시작됨');
+  } else {
+    const s=w?.starts?.[idx];if(!s)return;
+    // 선택한 시나리오로 AI 오프닝 생성
+    const openingPrompt=s.prompt||`${s.name} 시나리오로 시작해줘. ${s.desc}`;
+    const chats=gchats();
+    chats.push({type:'bubble',role:'user',name:'나',emoji:'🧑',imgB64:'',text:`[시작: ${s.name}] ${openingPrompt}`});
+    schats(chats);
+    addBubUI('user',`시작: ${s.name}`,'🧑','',openingPrompt);
+    rmEmpty();
+    callAI();
+  }
+}
+
+function clearChatConfirm(){
+  if(!confirm('대화 기록을 초기화할까요?'))return;
+  openStartPicker();
+}
+
+/* NOTE */
+/* SCROLL TO CONTINUE */
+function initScrollObserver(){
+  const msgsEl=document.getElementById('msgs');
+  const btn=document.getElementById('continue-btn');
+  if(!msgsEl||!btn)return;
+  msgsEl.addEventListener('scroll',()=>{
+    const atBottom=msgsEl.scrollHeight-msgsEl.scrollTop<=msgsEl.clientHeight+60;
+    if(atBottom&&!busy&&gchats().length>0){
+      btn.classList.add('show');
+    } else if(!atBottom){
+      btn.classList.remove('show');
+    }
+  });
+}
+async function continueStory(){
+  if(busy)return;
+  const chats=gchats();if(!chats.length)return;
+  document.getElementById('continue-btn').classList.remove('show');
+  await callAI();
+}
+
 function switchTab(t){
   document.querySelectorAll('.wt').forEach((b,i)=>b.classList.toggle('on',TABS[i]===t));
   document.querySelectorAll('.wc').forEach(c=>c.classList.remove('on'));
@@ -849,11 +1189,13 @@ function f2b(f){return new Promise(r=>{const rd=new FileReader();rd.onload=e=>r(
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 
 const ie=document.getElementById('inp');
-ie.addEventListener('input',()=>{ie.style.height='auto';ie.style.height=Math.min(ie.scrollHeight,100)+'px';});
-ie.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!('ontouchstart' in window)){e.preventDefault();send();}});
+ie.addEventListener('input',()=>{ie.style.height='auto';ie.style.height=Math.min(ie.scrollHeight,100)+'px';showSlashMenu(ie.value);});
+ie.addEventListener('keydown',e=>{if(e.key==='Escape'){hideSlashMenu();return;}if(e.key==='Enter'&&!e.shiftKey&&!('ontouchstart' in window)){e.preventDefault();send();}});
+document.addEventListener('click',e=>{if(document.getElementById('slash-menu')&&!document.getElementById('slash-menu').contains(e.target)&&e.target!==ie)hideSlashMenu();});
 
 renderWorldList();
 initModelUI();
+initOutUI();
 document.getElementById('claude-key-inp').value=claudeKey||'';
 document.getElementById('gemini-key-inp').value=geminiKey||'';
 
@@ -1109,6 +1451,94 @@ function initDefaultWorld(){
 }
 initDefaultWorld();
 
+/* SLASH COMMANDS */
+function showSlashMenu(val){
+  const menu=document.getElementById('slash-menu');
+  if(val==='/') menu.classList.add('open');
+  else menu.classList.remove('open');
+}
+function hideSlashMenu(){document.getElementById('slash-menu').classList.remove('open');}
+
+async function runSlash(cmd){
+  hideSlashMenu();
+  document.getElementById('inp').value='';
+  document.getElementById('inp').style.height='auto';
+  if(busy) return;
+  const w=cw(); if(!w) return;
+  rmEmpty();
+
+  let prompt='';
+  let label='';
+  if(cmd==='/속마음'){
+    const names=w.chars.map(c=>c.name).join(', ');
+    prompt=`[OOC 요청 — 스토리 외 분석]\n지금 이 순간 ${names} 각각의 진짜 속마음을 보여줘. 캐릭터 내면 시점으로, 플레이어한테는 절대 말하지 않는 진짜 생각과 감정. 각 캐릭터별로 2~3줄씩. 형식: "이름: 속마음 내용"`;
+    label='🌙 속마음';
+  } else if(cmd==='/요약'){
+    prompt=`[OOC 요청 — 장기 기억 저장용 요약]\n최근 대화 내용을 다음 형식으로 요약해줘. 장기 기억에 저장할 거야.\n\n형식:\n🔶 [사건 제목]\n[날짜/시간대 | 📍장소]\n-주요 사건 1\n-주요 사건 2\n-💕캐릭터→플레이어:[관계 변화가 있으면]\n\n여러 장면이 있으면 장면마다 🔶 블록으로 나눠줘.\n시간/장소/사건을 구체적으로. 한국어로.`;
+    label='📋 요약';
+  } else if(cmd==='/오류'){
+    prompt=`[OOC 요청 — 스토리 외 분석]\n지금까지의 대화에서 캐붕(캐릭터 붕괴) 또는 설정 오류가 있었는지 분석해줘. 각 캐릭터 성정과 다르게 행동한 부분이 있으면 구체적으로 지적해줘. 없으면 "이상 없음"이라고 해줘.`;
+    label='⚠️ 오류 점검';
+  }
+  if(!prompt) return;
+
+  addNarUI(`— ${label} —`);
+  busy=true; document.getElementById('snd').disabled=true;
+  showTyp();
+
+  const chats=gchats();
+  let apiMsgs=[];
+  chats.slice(-20).forEach(m=>{
+    if(m.type==='nar'||m.role==='ai')apiMsgs.push({role:'assistant',content:m.text});
+    else if(m.role==='user')apiMsgs.push({role:'user',content:m.text});
+    else if(m.role==='npc')apiMsgs.push({role:'user',content:m.name+': '+m.text});
+  });
+  const cl=[];apiMsgs.forEach(m=>{if(cl.length&&cl[cl.length-1].role===m.role)cl[cl.length-1].content+='\n'+m.content;else cl.push({...m});});
+  cl.push({role:'user',content:prompt});
+
+  try{
+    let reply='';
+    if(curModel==='pro'){
+      if(!geminiKey){hideTyp();addNarUI('⚠️ Gemini 키를 입력해주세요.');busy=false;document.getElementById('snd').disabled=false;return;}
+      const gm=cl.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:buildSys()}]},contents:gm,generationConfig:{maxOutputTokens:800}})});
+      const data=await res.json();
+      if(data.error){hideTyp();addNarUI('⚠️ Gemini 오류: '+data.error.message);busy=false;document.getElementById('snd').disabled=false;return;}
+      reply=data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'...';
+    } else {
+      if(!claudeKey){hideTyp();addNarUI('⚠️ Claude API 키를 입력해주세요.');busy=false;document.getElementById('snd').disabled=false;return;}
+      const model=curModel==='hyper'?'claude-opus-4-6':'claude-sonnet-4-6';
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':claudeKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:800,system:buildSys(),messages:cl})});
+      const data=await res.json();
+      if(data.error){hideTyp();addNarUI('⚠️ Claude 오류: '+data.error.message);busy=false;document.getElementById('snd').disabled=false;return;}
+      reply=data.content?.map(b=>b.text||'').join('')||'...';
+    }
+    hideTyp();
+    const clean=reply.replace(/<<HEADER>>[\s\S]*?(?:<<\/HEADER>>|<\/HEADER>>)/g,'').replace(/<<INFO>>[\s\S]*?(?:<<\/INFO>>|<\/INFO>>)/g,'').trim();
+    addNarUI(clean);
+
+    // /요약이면 자동으로 장기 기억에 저장
+    if(cmd==='/요약'){
+      const w=cw();
+      if(w){
+        if(!w.memory)w.memory={long:[],short:[]};
+        if(!w.memory.long)w.memory.long=[];
+        const title=`T${turnNum} 요약`;
+        w.memory.long.push({title,body:clean});
+        sws();
+        toast('📋 장기 기억에 자동 저장됨');
+      }
+    }
+  }catch(e){hideTyp();addNarUI('(오류 — 다시 시도해 주세요)');}
+  busy=false;document.getElementById('snd').disabled=false;scr();
+}
+
+renderWorldList();
+initModelUI();
+initOutUI();
+document.getElementById('claude-key-inp').value=claudeKey||'';
+document.getElementById('gemini-key-inp').value=geminiKey||'';
+initDefaultWorld();
 </script>
 </body>
 </html>
